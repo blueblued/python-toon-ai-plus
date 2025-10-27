@@ -26,7 +26,8 @@ class TestPrimitives:
         assert encode("hello") == "hello"
 
     def test_string_with_spaces(self) -> None:
-        assert encode("hello world") == '"hello world"'
+        # Spaces don't require quoting unless there are structural characters
+        assert encode("hello world") == "hello world"
 
     def test_string_empty(self) -> None:
         assert encode("") == '""'
@@ -69,12 +70,14 @@ class TestPrimitiveArrays:
     def test_number_array(self) -> None:
         arr = [1, 2, 3, 4, 5]
         result = encode(arr)
-        assert result == "1, 2, 3, 4, 5"
+        # Primitive arrays always include length marker
+        assert result == "[5]: 1,2,3,4,5"
 
     def test_string_array(self) -> None:
         arr = ["apple", "banana", "cherry"]
         result = encode(arr)
-        assert result == "apple, banana, cherry"
+        # Primitive arrays always include length marker
+        assert result == "[3]: apple,banana,cherry"
 
     def test_mixed_primitive_array(self) -> None:
         arr = [1, "two", True, None]
@@ -86,7 +89,8 @@ class TestPrimitiveArrays:
 
     def test_empty_array(self) -> None:
         result = encode([])
-        assert result == "[]"
+        # Empty arrays show length marker with colon
+        assert result == "[0]:"
 
 
 class TestTabularArrays:
@@ -112,16 +116,18 @@ class TestTabularArrays:
             {"name": "Bob Jones", "city": "Los Angeles"},
         ]
         result = encode(arr)
-        assert '"Alice Smith"' in result
-        assert '"New York"' in result
+        # Spaces don't require quoting in tabular format
+        assert "Alice Smith" in result
+        assert "New York" in result
 
     def test_tabular_with_length_marker(self) -> None:
         arr = [
             {"id": 1, "value": "a"},
             {"id": 2, "value": "b"},
         ]
-        result = encode(arr, {"length_marker": True})
-        assert "[2]" in result
+        result = encode(arr, {"lengthMarker": "#"})
+        # lengthMarker adds # prefix before length
+        assert "[#2,]" in result
 
 
 class TestMixedArrays:
@@ -144,8 +150,10 @@ class TestMixedArrays:
             [4, 5, 6],
         ]
         result = encode(arr)
-        assert "[]:" in result
+        # Nested arrays use list format with length markers
+        assert "[2]:" in result
         assert "- " in result
+        assert "[3,]:" in result  # Inner arrays show length with delimiter
 
 
 class TestObjectsWithArrays:
@@ -154,7 +162,8 @@ class TestObjectsWithArrays:
     def test_object_with_primitive_array(self) -> None:
         obj = {"numbers": [1, 2, 3]}
         result = encode(obj)
-        assert "numbers: 1, 2, 3" in result
+        # Primitive arrays always include length marker
+        assert "numbers[3]: 1,2,3" in result
 
     def test_object_with_tabular_array(self) -> None:
         obj = {
@@ -164,7 +173,8 @@ class TestObjectsWithArrays:
             ]
         }
         result = encode(obj)
-        assert "users{id,name}:" in result
+        # Tabular arrays include length with delimiter
+        assert "users[2,]{id,name}:" in result
         assert "1,Alice" in result
 
 
@@ -243,8 +253,10 @@ class TestComplexStructures:
         result = encode(obj)
         assert "metadata:" in result
         assert "version: 1" in result
-        assert "items{id,name}:" in result
-        assert "tags: alpha, beta, gamma" in result
+        # Tabular arrays include length with delimiter
+        assert "items[2,]{id,name}:" in result
+        # Primitive arrays include length marker
+        assert "tags[3]: alpha,beta,gamma" in result
 
 
 class TestEdgeCases:
