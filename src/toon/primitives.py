@@ -90,6 +90,10 @@ def is_safe_unquoted(value: str, delimiter: str = COMMA) -> bool:
     except ValueError:
         pass
 
+    # Check if starts with list marker (hyphen)
+    if value.startswith(LIST_ITEM_MARKER):
+        return False
+
     # Check for structural characters (including current delimiter)
     unsafe_chars = [
         COLON,
@@ -98,7 +102,6 @@ def is_safe_unquoted(value: str, delimiter: str = COMMA) -> bool:
         CLOSE_BRACKET,
         OPEN_BRACE,
         CLOSE_BRACE,
-        LIST_ITEM_MARKER,
         DOUBLE_QUOTE,
         BACKSLASH,
         NEWLINE,

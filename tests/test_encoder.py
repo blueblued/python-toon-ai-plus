@@ -37,6 +37,14 @@ class TestPrimitives:
         assert encode("true") == '"true"'
         assert encode("false") == '"false"'
 
+    def test_string_with_hyphens(self) -> None:
+        # Strings starting with hyphen must be quoted (list marker conflict)
+        assert encode("-hello") == '"-hello"'
+        assert encode("-") == '"-"'
+        # Strings containing or ending with hyphen don't need quotes
+        assert encode("hello-world") == "hello-world"
+        assert encode("hello-") == "hello-"
+
 
 class TestObjects:
     """Test encoding of objects."""
