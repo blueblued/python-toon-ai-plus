@@ -12,7 +12,7 @@ A compact data format optimized for transmitting structured information to Large
 
 TOON (Token-Oriented Object Notation) combines YAML's indentation-based structure for nested objects and CSV's tabular format for uniform data rows, optimized specifically for token efficiency in LLM contexts.
 
-This is a faithful Python port of the original [TOON TypeScript library](https://github.com/johannschopplich/toon) by Johann Schopplich, maintaining 100% output compatibility.
+This is a faithful Python port of the original [TOON TypeScript library](https://github.com/johannschopplich/toon) by Johann Schopplich, maintaining 100% output compatibility with the [official TOON specification](https://github.com/johannschopplich/toon/blob/main/SPEC.md).
 
 ### Key Features
 
@@ -208,20 +208,24 @@ The length bracket format depends on the array type:
 - Other: `[3|]:` or `[3\t]:` (delimiter shown)
 
 ### Quoting Rules
-Strings are quoted only when necessary:
+
+Strings are quoted only when necessary (following the [TOON specification](https://github.com/johannschopplich/toon/blob/main/SPEC.md)):
+
+- Empty strings
 - Keywords: `null`, `true`, `false`
 - Numeric strings: `42`, `-3.14`
-- Contains spaces, tabs, newlines
-- Contains structural characters: `:`, `,`, `|`, `[`, `]`, `{`, `}`, `-`
-- Contains current delimiter
-- Empty strings
+- Leading or trailing whitespace
+- Contains structural characters: `:`, `[`, `]`, `{`, `}`, `-`, `"`
+- Contains current delimiter (`,`, `|`, or tab)
+- Contains control characters (newline, carriage return, tab, backslash)
 
 ```python
-"hello"        # => hello (no quotes)
-"hello world"  # => "hello world" (has space)
-"null"         # => "null" (keyword)
-"42"           # => "42" (looks like number)
-""             # => "" (empty)
+"hello"          # => hello (no quotes)
+"hello world"    # => hello world (internal spaces OK)
+" hello"         # => " hello" (leading space requires quotes)
+"null"           # => "null" (keyword)
+"42"             # => "42" (looks like number)
+""               # => "" (empty)
 ```
 
 ## Type Conversions
@@ -357,7 +361,8 @@ MIT License - see [LICENSE](LICENSE) file for details
 ## Related
 
 - [Original TOON (TypeScript)](https://github.com/johannschopplich/toon) - The original implementation
-- [TOON Format Specification](https://github.com/johannschopplich/toon#readme) - Detailed format documentation
+- [TOON Format Specification (SPEC.md)](https://github.com/johannschopplich/toon/blob/main/SPEC.md) - Official v1 specification with normative encoding rules
+- [TOON README](https://github.com/johannschopplich/toon#readme) - Format overview and examples
 
 ## Contributing
 
