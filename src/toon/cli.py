@@ -4,10 +4,8 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Optional
 
 from . import decode, encode
-from .decoder import ToonDecodeError
 from .types import DecodeOptions, EncodeOptions
 
 

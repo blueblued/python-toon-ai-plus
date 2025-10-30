@@ -5,9 +5,9 @@ A compact data format optimized for transmitting structured information to LLMs
 with 30-60% fewer tokens than JSON.
 """
 
-from .decoder import decode, ToonDecodeError
+from .decoder import ToonDecodeError, decode
 from .encoder import encode
-from .types import Delimiter, DelimiterKey, DecodeOptions, EncodeOptions
+from .types import DecodeOptions, Delimiter, DelimiterKey, EncodeOptions
 
 __version__ = "0.1.1"
 __all__ = [

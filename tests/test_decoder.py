@@ -1,7 +1,8 @@
 """Tests for TOON decoder."""
 
 import pytest
-from toon import decode, ToonDecodeError
+
+from toon import ToonDecodeError, decode
 from toon.types import DecodeOptions
 
 

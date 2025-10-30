@@ -528,7 +528,9 @@ def decode_array_from_header(
     # Non-inline array
     if fields is not None:
         # Tabular array
-        return decode_tabular_array(lines, header_idx + 1, header_depth, fields, delimiter, length, strict)
+        return decode_tabular_array(
+            lines, header_idx + 1, header_depth, fields, delimiter, length, strict
+        )
     else:
         # List format (mixed/non-uniform)
         return decode_list_array(lines, header_idx + 1, header_depth, delimiter, length, strict)
@@ -814,7 +816,9 @@ def decode_list_array(
 
                         if not field_value_str:
                             # Nested object
-                            item_obj[field_key] = decode_object(lines, i + 1, field_line.depth, strict)
+                            item_obj[field_key] = decode_object(
+                                lines, i + 1, field_line.depth, strict
+                            )
                             i += 1
                             while i < len(lines) and lines[i].depth > field_line.depth:
                                 i += 1
