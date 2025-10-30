@@ -1,4 +1,4 @@
-# python-toon
+# python-toon encoder/decoder
 
 **Token-Oriented Object Notation for Python**
 
@@ -7,6 +7,12 @@ A compact data format optimized for transmitting structured information to Large
 [![Tests](https://github.com/xaviviro/python-toon/actions/workflows/test.yml/badge.svg)](https://github.com/xaviviro/python-toon/actions)
 [![PyPI](https://img.shields.io/pypi/v/python-toon.svg)](https://pypi.org/project/python-toon/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/python-toon.svg)](https://pypi.org/project/python-toon/)
+
+## Installation
+
+```bash
+pip install python-toon
+```
 
 ## What is TOON?
 
@@ -23,11 +29,6 @@ This is a faithful Python port of the original [TOON TypeScript library](https:/
 - **LLM-friendly**: Maintains semantic clarity while reducing token count
 - **100% compatible** with original TypeScript implementation
 
-## Installation
-
-```bash
-pip install python-toon
-```
 
 ## Quick Start
 
