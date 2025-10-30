@@ -74,6 +74,49 @@ print(encode(data))
 # tags[3]: alpha,beta,gamma
 ```
 
+## CLI Usage
+
+Command-line tool for converting between JSON and TOON formats.
+
+```bash
+# Encode JSON to TOON (auto-detected by .json extension)
+toon input.json -o output.toon
+
+# Decode TOON to JSON (auto-detected by .toon extension)
+toon data.toon -o output.json
+
+# Use stdin/stdout
+echo '{"name": "Ada"}' | toon -
+# Output: name: Ada
+
+# Force encode mode
+toon data.json --encode
+
+# Force decode mode
+toon data.toon --decode
+
+# Custom delimiter
+toon data.json --delimiter "\t" -o output.toon
+
+# With length markers
+toon data.json --length-marker -o output.toon
+
+# Lenient decoding (disable strict validation)
+toon data.toon --no-strict -o output.json
+```
+
+### CLI Options
+
+| Option | Description |
+|--------|-------------|
+| `-o, --output <file>` | Output file path (prints to stdout if omitted) |
+| `-e, --encode` | Force encode mode (overrides auto-detection) |
+| `-d, --decode` | Force decode mode (overrides auto-detection) |
+| `--delimiter <char>` | Array delimiter: `,` (comma), `\t` (tab), `\|` (pipe) |
+| `--indent <number>` | Indentation size (default: 2) |
+| `--length-marker` | Add `#` prefix to array lengths (e.g., `items[#3]`) |
+| `--no-strict` | Disable strict validation when decoding |
+
 ## API Reference
 
 ### `encode(value, options=None)`
@@ -86,6 +129,43 @@ Converts a Python value to TOON format.
 
 **Returns:** `str` - TOON-formatted string
 
+**Example:**
+
+```python
+from toon import encode
+
+data = {"id": 123, "name": "Ada"}
+toon_str = encode(data)
+print(toon_str)
+# Output:
+# id: 123
+# name: Ada
+```
+
+### `decode(input_str, options=None)`
+
+Converts a TOON-formatted string back to Python values.
+
+**Parameters:**
+- `input_str` (str): TOON-formatted string to parse
+- `options` (DecodeOptions, optional): Decoding options
+
+**Returns:** Python value (dict, list, or primitive)
+
+**Example:**
+
+```python
+from toon import decode
+
+toon_str = """items[2]{sku,qty,price}:
+  A1,2,9.99
+  B2,1,14.5"""
+
+data = decode(toon_str)
+print(data)
+# Output: {'items': [{'sku': 'A1', 'qty': 2, 'price': 9.99}, {'sku': 'B2', 'qty': 1, 'price': 14.5}]}
+```
+
 ### Encoding Options
 
 ```python
@@ -97,6 +177,29 @@ encode(data, {
     "lengthMarker": "#"    # Optional marker prefix: "#" | False (default: False)
 })
 ```
+
+### Decoding Options
+
+```python
+from toon import decode, DecodeOptions
+
+options = DecodeOptions(
+    indent=2,    # Expected number of spaces per indentation level (default: 2)
+    strict=True  # Enable strict validation (default: True)
+)
+
+data = decode(toon_str, options)
+```
+
+**Strict Mode:**
+
+By default, the decoder validates input strictly:
+- **Invalid escape sequences**: Throws on `"\x"`, unterminated strings
+- **Syntax errors**: Throws on missing colons, malformed headers
+- **Array length mismatches**: Throws when declared length doesn't match actual count
+- **Delimiter mismatches**: Throws when row delimiters don't match header
+
+Set `strict=False` to allow lenient parsing.
 
 ### Delimiter Options
 

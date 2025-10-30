@@ -41,5 +41,18 @@ class ResolvedEncodeOptions:
         self.lengthMarker = length_marker
 
 
+class DecodeOptions:
+    """Options for TOON decoding.
+
+    Attributes:
+        indent: Number of spaces per indentation level (default: 2)
+        strict: Enable strict validation (default: True)
+    """
+
+    def __init__(self, indent: int = 2, strict: bool = True) -> None:
+        self.indent = indent
+        self.strict = strict
+
+
 # Depth type for tracking indentation level
 Depth = int
