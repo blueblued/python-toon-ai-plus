@@ -1,8 +1,9 @@
-# python-toon encoder/decoder
+# python-toon-ai-plus encoder/decoder
 
 **Token-Oriented Object Notation for Python**
 
 A compact data format optimized for transmitting structured information to Large Language Models (LLMs) with 30-60% fewer tokens than JSON.
+Ai-plus Enhance LLM comprehension with semantic annotations and automatic Pydantic schema extraction which help you building AI systems that truly understand your data.
 
 [![Tests](https://github.com/xaviviro/python-toon/actions/workflows/test.yml/badge.svg)](https://github.com/xaviviro/python-toon/actions)
 [![PyPI](https://img.shields.io/pypi/v/python-toon.svg)](https://pypi.org/project/python-toon/)
