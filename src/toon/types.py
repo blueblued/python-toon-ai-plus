@@ -20,11 +20,17 @@ class EncodeOptions(TypedDict, total=False):
         indent: Number of spaces per indentation level (default: 2)
         delimiter: Delimiter character for arrays (default: comma)
         lengthMarker: Optional marker to prefix array lengths (default: False)
+        comments: Optional mapping from dotted paths to comment text
+        commentPrefix: Prefix for comment lines (default: '#')
+        modelComments: Auto-extract comments from Pydantic BaseModel (default: True)
     """
 
     indent: int
     delimiter: Delimiter
     lengthMarker: Literal["#", False]
+    comments: Dict[str, str]
+    commentPrefix: str
+    modelComments: bool
 
 
 class ResolvedEncodeOptions:
@@ -35,23 +41,14 @@ class ResolvedEncodeOptions:
         indent: int = 2,
         delimiter: str = ",",
         length_marker: Literal["#", False] = False,
+        comments: Dict[str, str] | None = None,
+        comment_prefix: str = "#",
     ) -> None:
         self.indent = indent
         self.delimiter = delimiter
         self.lengthMarker = length_marker
-
-
-class DecodeOptions:
-    """Options for TOON decoding.
-
-    Attributes:
-        indent: Number of spaces per indentation level (default: 2)
-        strict: Enable strict validation (default: True)
-    """
-
-    def __init__(self, indent: int = 2, strict: bool = True) -> None:
-        self.indent = indent
-        self.strict = strict
+        self.comments: Dict[str, str] = comments or {}
+        self.commentPrefix = comment_prefix
 
 
 # Depth type for tracking indentation level

@@ -16,8 +16,22 @@ from .types import Depth, JsonArray, JsonObject, JsonValue, ResolvedEncodeOption
 from .writer import LineWriter
 
 
+def _path_to_key(path_parts: List[str]) -> str:
+    return ".".join(path_parts)
+
+
+def _maybe_write_comment(options: ResolvedEncodeOptions, writer: LineWriter, depth: Depth, path_parts: List[str]) -> None:
+    key = _path_to_key(path_parts)
+    if not key:
+        return
+    comment = options.comments.get(key)
+    if comment:
+        prefix = options.commentPrefix if options.commentPrefix is not None else "#"
+        writer.push(depth, f"{prefix} {comment}")
+
+
 def encode_value(
-    value: JsonValue, options: ResolvedEncodeOptions, writer: LineWriter, depth: Depth = 0
+    value: JsonValue, options: ResolvedEncodeOptions, writer: LineWriter, depth: Depth = 0, path_parts: Optional[List[str]] = None
 ) -> None:
     """Encode a value to TOON format.
 
@@ -27,12 +41,15 @@ def encode_value(
         writer: Line writer for output
         depth: Current indentation depth
     """
+    if path_parts is None:
+        path_parts = []
+
     if is_json_primitive(value):
         writer.push(depth, encode_primitive(value, options.delimiter))
     elif is_json_array(value):
-        encode_array(value, options, writer, depth, None)
+        encode_array(value, options, writer, depth, None, path_parts)
     elif is_json_object(value):
-        encode_object(value, options, writer, depth, None)
+        encode_object(value, options, writer, depth, None, path_parts)
 
 
 def encode_object(
@@ -41,6 +58,7 @@ def encode_object(
     writer: LineWriter,
     depth: Depth,
     key: Optional[str],
+    path_parts: List[str],
 ) -> None:
     """Encode an object to TOON format.
 
@@ -52,14 +70,22 @@ def encode_object(
         key: Optional key name
     """
     if key:
+        _maybe_write_comment(options, writer, depth, [*path_parts, key])
         writer.push(depth, f"{encode_key(key)}:")
 
     for obj_key, obj_value in obj.items():
-        encode_key_value_pair(obj_key, obj_value, options, writer, depth if not key else depth + 1)
+        encode_key_value_pair(
+            obj_key,
+            obj_value,
+            options,
+            writer,
+            depth if not key else depth + 1,
+            [*path_parts, key] if key else path_parts,
+        )
 
 
 def encode_key_value_pair(
-    key: str, value: JsonValue, options: ResolvedEncodeOptions, writer: LineWriter, depth: Depth
+    key: str, value: JsonValue, options: ResolvedEncodeOptions, writer: LineWriter, depth: Depth, path_parts: List[str]
 ) -> None:
     """Encode a key-value pair.
 
@@ -71,11 +97,12 @@ def encode_key_value_pair(
         depth: Current indentation depth
     """
     if is_json_primitive(value):
+        _maybe_write_comment(options, writer, depth, [*path_parts, key])
         writer.push(depth, f"{encode_key(key)}: {encode_primitive(value, options.delimiter)}")
     elif is_json_array(value):
-        encode_array(value, options, writer, depth, key)
+        encode_array(value, options, writer, depth, key, path_parts)
     elif is_json_object(value):
-        encode_object(value, options, writer, depth, key)
+        encode_object(value, options, writer, depth, key, path_parts)
 
 
 def encode_array(
@@ -84,6 +111,7 @@ def encode_array(
     writer: LineWriter,
     depth: Depth,
     key: Optional[str],
+    path_parts: List[str],
 ) -> None:
     """Encode an array to TOON format.
 
@@ -96,23 +124,25 @@ def encode_array(
     """
     # Handle empty array
     if not arr:
+        if key:
+            _maybe_write_comment(options, writer, depth, [*path_parts, key])
         header = format_header(key, 0, None, options.delimiter, options.lengthMarker)
         writer.push(depth, header)
         return
 
     # Check array type and encode accordingly
     if is_array_of_primitives(arr):
-        encode_inline_primitive_array(arr, options, writer, depth, key)
+        encode_inline_primitive_array(arr, options, writer, depth, key, path_parts)
     elif is_array_of_arrays(arr):
-        encode_array_of_arrays(arr, options, writer, depth, key)
+        encode_array_of_arrays(arr, options, writer, depth, key, path_parts)
     elif is_array_of_objects(arr):
         tabular_header = detect_tabular_header(arr, options.delimiter)
         if tabular_header:
-            encode_array_of_objects_as_tabular(arr, tabular_header, options, writer, depth, key)
+            encode_array_of_objects_as_tabular(arr, tabular_header, options, writer, depth, key, path_parts)
         else:
-            encode_mixed_array_as_list_items(arr, options, writer, depth, key)
+            encode_mixed_array_as_list_items(arr, options, writer, depth, key, path_parts)
     else:
-        encode_mixed_array_as_list_items(arr, options, writer, depth, key)
+        encode_mixed_array_as_list_items(arr, options, writer, depth, key, path_parts)
 
 
 def encode_inline_primitive_array(
@@ -121,6 +151,7 @@ def encode_inline_primitive_array(
     writer: LineWriter,
     depth: Depth,
     key: Optional[str],
+    path_parts: List[str],
 ) -> None:
     """Encode an array of primitives inline.
 
@@ -131,6 +162,8 @@ def encode_inline_primitive_array(
         depth: Current indentation depth
         key: Optional key name
     """
+    if key:
+        _maybe_write_comment(options, writer, depth, [*path_parts, key])
     encoded_values = [encode_primitive(item, options.delimiter) for item in arr]
     joined = join_encoded_values(encoded_values, options.delimiter)
     header = format_header(key, len(arr), None, options.delimiter, options.lengthMarker)
@@ -143,6 +176,7 @@ def encode_array_of_arrays(
     writer: LineWriter,
     depth: Depth,
     key: Optional[str],
+    path_parts: List[str],
 ) -> None:
     """Encode an array of arrays.
 
@@ -153,6 +187,8 @@ def encode_array_of_arrays(
         depth: Current indentation depth
         key: Optional key name
     """
+    if key:
+        _maybe_write_comment(options, writer, depth, [*path_parts, key])
     header = format_header(key, len(arr), None, options.delimiter, options.lengthMarker)
     writer.push(depth, header)
 
@@ -166,7 +202,7 @@ def encode_array_of_arrays(
                 f"{LIST_ITEM_PREFIX}[{length_marker}{len(item)}{options.delimiter}]: {joined}",
             )
         else:
-            encode_array(item, options, writer, depth + 1, None)
+            encode_array(item, options, writer, depth + 1, None, path_parts)
 
 
 def detect_tabular_header(arr: List[JsonObject], delimiter: str) -> Optional[List[str]]:
@@ -215,6 +251,7 @@ def encode_array_of_objects_as_tabular(
     writer: LineWriter,
     depth: Depth,
     key: Optional[str],
+    path_parts: List[str],
 ) -> None:
     """Encode array of uniform objects in tabular format.
 
@@ -226,8 +263,19 @@ def encode_array_of_objects_as_tabular(
         depth: Current indentation depth
         key: Optional key name
     """
+    if key:
+        _maybe_write_comment(options, writer, depth, [*path_parts, key])
     header = format_header(key, len(arr), fields, options.delimiter, options.lengthMarker)
     writer.push(depth, header)
+
+    # Optional per-field comments (if provided) placed under header
+    any_field_comment = False
+    for field in fields:
+        field_comment = options.comments.get(_path_to_key([*path_parts, key, field]) if key else _path_to_key([*path_parts, field]))
+        if field_comment:
+            any_field_comment = True
+            prefix = options.commentPrefix if options.commentPrefix is not None else "#"
+            writer.push(depth + 1, f"{prefix} {field}: {field_comment}")
 
     for obj in arr:
         row_values = [encode_primitive(obj[field], options.delimiter) for field in fields]
@@ -241,6 +289,7 @@ def encode_mixed_array_as_list_items(
     writer: LineWriter,
     depth: Depth,
     key: Optional[str],
+    path_parts: List[str],
 ) -> None:
     """Encode mixed array as list items.
 
@@ -251,6 +300,8 @@ def encode_mixed_array_as_list_items(
         depth: Current indentation depth
         key: Optional key name
     """
+    if key:
+        _maybe_write_comment(options, writer, depth, [*path_parts, key])
     header = format_header(key, len(arr), None, options.delimiter, options.lengthMarker)
     writer.push(depth, header)
 
@@ -258,13 +309,13 @@ def encode_mixed_array_as_list_items(
         if is_json_primitive(item):
             writer.push(depth + 1, f"{LIST_ITEM_PREFIX}{encode_primitive(item, options.delimiter)}")
         elif is_json_object(item):
-            encode_object_as_list_item(item, options, writer, depth + 1)
+            encode_object_as_list_item(item, options, writer, depth + 1, path_parts)
         elif is_json_array(item):
-            encode_array(item, options, writer, depth + 1, None)
+            encode_array(item, options, writer, depth + 1, None, path_parts)
 
 
 def encode_object_as_list_item(
-    obj: JsonObject, options: ResolvedEncodeOptions, writer: LineWriter, depth: Depth
+    obj: JsonObject, options: ResolvedEncodeOptions, writer: LineWriter, depth: Depth, path_parts: List[str]
 ) -> None:
     """Encode object as a list item.
 
@@ -288,8 +339,8 @@ def encode_object_as_list_item(
     else:
         # If first value is not primitive, put "-" alone then encode normally
         writer.push(depth, LIST_ITEM_PREFIX.rstrip())
-        encode_key_value_pair(first_key, first_value, options, writer, depth + 1)
+        encode_key_value_pair(first_key, first_value, options, writer, depth + 1, path_parts)
 
     # Rest of the keys go normally indented
     for key, value in keys[1:]:
-        encode_key_value_pair(key, value, options, writer, depth + 1)
+        encode_key_value_pair(key, value, options, writer, depth + 1, path_parts)

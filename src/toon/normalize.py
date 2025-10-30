@@ -57,6 +57,19 @@ def normalize_value(value: Any) -> JsonValue:
     if isinstance(value, dict):
         return {str(key): normalize_value(val) for key, val in value.items()}
 
+    # Handle Pydantic BaseModel (v2 and v1)
+    try:
+        # Pydantic v2: has model_dump
+        if hasattr(value, "model_dump") and callable(getattr(value, "model_dump")):
+            dumped = value.model_dump()
+            return {str(k): normalize_value(v) for k, v in dumped.items()}
+        # Pydantic v1: has dict()
+        if hasattr(value, "dict") and callable(getattr(value, "dict")):
+            dumped = value.dict()
+            return {str(k): normalize_value(v) for k, v in dumped.items()}
+    except Exception:
+        pass
+
     # Handle callables, undefined, symbols -> null
     if callable(value):
         return None
